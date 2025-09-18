@@ -1,0 +1,6 @@
+* { box-sizing: border-box; }
+a { text-decoration: none; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #e6e6e6; padding: 8px 10px; text-align: left; }
+th { background: #fafafa; }
+.badge { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px; }
