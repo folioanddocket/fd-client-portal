@@ -1,58 +1,59 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+'use client';
 
-import { NextResponse, NextRequest } from "next/server";
-import { select } from "../../../lib/airtable";
+import { useUser } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
 
-function esc(str: string) {
-  // Escape single quotes for Airtable formulas: O'Brien -> O''Brien
-  return String(str ?? "").replace(/'/g, "''");
+type Row = Record<string, any>;
+
+export default function Requests() {
+  const { isSignedIn, user } = useUser();
+  const [rows, setRows] = useState<Row[]>([]);
+  const email =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    '';
+
+  useEffect(() => {
+    if (!isSignedIn || !email) { setRows([]); return; }
+    const e = encodeURIComponent(email.toLowerCase().trim());
+    (async () => {
+      try {
+        const r = await fetch(`/api/requests?email=${e}`, { cache: 'no-store' });
+        const json = await r.json();
+        setRows(Array.isArray(json) ? json : []);
+      } catch { setRows([]); }
+    })();
+  }, [isSignedIn, email]);
+
+  if (!isSignedIn)
+    return (
+      <div>
+        <h2>Client Requests</h2>
+        <p>Please sign in to view your requests.</p>
+      </div>
+    );
+
+  return (
+    <div>
+      <h2>Client Requests</h2>
+      <table>
+        <thead>
+          <tr><th>Sent At</th><th>Vendor</th><th>Template</th><th>Outcome</th><th>Resolved</th></tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr><td colSpan={5}>No requests to display.</td></tr>
+          ) : rows.map((r:any)=>(
+            <tr key={r.id}>
+              <td>{r['Sent At'] ?? '—'}</td>
+              <td>{Array.isArray(r['Vendor']) ? r['Vendor'][0] : (r['Vendor'] ?? '—')}</td>
+              <td>{r['Template Used'] ?? '—'}</td>
+              <td>{r['Outcome'] ?? '—'}</td>
+              <td>{r['Resolved At'] ?? '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
-
-export async function GET(req: NextRequest) {
-  try {
-    const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase();
-    if (!email) return NextResponse.json([]);
-
-    // 1) Find the client by email
-    const c = await select("Clients", {
-      filterByFormula: `LOWER({Primary Contact Email}) = '${esc(email)}'`,
-      maxRecords: 1,
-      fields: ["Client Record ID"]
-    });
-    const clientId = c.records[0]?.fields?.["Client Record ID"] as string | undefined;
-    if (!clientId) return NextResponse.json([]);
-
-    // 2) Get this client's vendors (names)
-    const v = await select("Vendors", {
-      filterByFormula: `FIND('${clientId}', ARRAYJOIN({Client Record ID (lkp)})) > 0`,
-      maxRecords: 200,
-      fields: ["Vendor Name"]
-    });
-    const names = v.records
-      .map(r => r.fields?.["Vendor Name"] as string | undefined)
-      .filter(Boolean) as string[];
-
-    if (names.length === 0) return NextResponse.json([]);
-
-    // 3) Build a formula that matches Requests where Vendor contains any of those names
-    //    (ARRAYJOIN({Vendor}) returns the linked display names; we use FIND() on each)
-    const ors = names.map(n => `FIND('${esc(n)}', ARRAYJOIN({Vendor})) > 0`);
-    const formula = ors.length === 1 ? ors[0] : `OR(${ors.join(",")})`;
-
-    // 4) Fetch Requests
-    const r = await select("Requests", {
-      filterByFormula: formula,
-      maxRecords: 300,
-      cellFormat: "string",
-      fields: ["Sent At", "Vendor", "Template Used", "Outcome", "Resolved At"],
-      sort: [{ field: "Sent At", direction: "desc" }]
-    });
-
-    return NextResponse.json(r.records.map(x => ({ id: x.id, ...x.fields })));
-  } catch (e) {
-    console.error("requests api error", e);
-    return NextResponse.json([]);
-  }
-}
-
