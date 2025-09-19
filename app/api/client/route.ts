@@ -4,6 +4,7 @@ import { getClientRecordId } from "../../../lib/auth";
 
 export async function GET() {
   const clientId = await getClientRecordId();
+  if (!clientId) return NextResponse.json({ uploadLink: null }); // safe default
   const r = await select("Clients", {
     filterByFormula: `RECORD_ID() = '${clientId}'`,
     maxRecords: "1",
