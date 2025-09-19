@@ -8,7 +8,6 @@ export async function GET(req: NextRequest) {
   try {
     const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase();
     if (!email) return NextResponse.json([]);
-
     const c = await select("Clients", {
       filterByFormula: `LOWER({Primary Contact Email}) = '${email}'`,
       maxRecords: 1,
@@ -24,7 +23,6 @@ export async function GET(req: NextRequest) {
       fields: ["Vendor","Doc Type","File","Expiration Date","Status (auto)"],
       sort: [{ field: "Expiration Date", direction: "asc" }]
     });
-
     return NextResponse.json(r.records.map(x => ({ id: x.id, ...x.fields })));
   } catch (e) {
     console.error("docs api error", e);
