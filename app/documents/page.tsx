@@ -1,20 +1,27 @@
-import { headers } from "next/headers";
+export const dynamic = "force-dynamic";
 
-function getOrigin() {
-  const h = headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
-
-async function fetchJSON(path: string) {
-  const r = await fetch(`${getOrigin()}${path}`, { cache: "no-store" });
-  if (!r.ok) return [];
-  return r.json();
-}
+import { select } from "../../lib/airtable";
+import { getClientRecordId } from "../../lib/auth";
 
 export default async function Documents() {
-  const rows = await fetchJSON("/api/docs");
+  const clientId = await getClientRecordId();
+
+  let rows: any[] = [];
+  if (clientId) {
+    try {
+      const r = await select("Vendor Docs", {
+        filterByFormula: `{Client Record ID (lkp)} = '${clientId}'`,
+        maxRecords: 500,
+        cellFormat: "string",
+        fields: ["Vendor","Doc Type","File","Expiration Date","Status (auto)"],
+        sort: [{ field: "Expiration Date", direction: "asc" }]
+      });
+      rows = r.records.map(x => ({ id: x.id, ...x.fields }));
+    } catch (e) {
+      console.error("docs data error", e);
+    }
+  }
+
   return (
     <div>
       <h2>Client Documents</h2>
