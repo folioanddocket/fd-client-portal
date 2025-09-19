@@ -5,6 +5,21 @@ import { useEffect, useState } from 'react';
 
 type Row = Record<string, any>;
 
+function statusChip(value: string | undefined) {
+  const s = (value || '').trim();
+  // Map common variants
+  if (s === 'Red - Missing' || s === 'Missing' || s === 'Flagged') {
+    return <span className="chip red">{s || '—'}</span>;
+  }
+  if (s === 'Yellow - Expiring' || s === 'Expiring') {
+    return <span className="chip amber">{s}</span>;
+  }
+  if (s === 'Green' || s === 'OK') {
+    return <span className="chip green">{s}</span>;
+  }
+  return <span className="chip gray">{s || '—'}</span>;
+}
+
 export default function Documents() {
   const { isSignedIn, user } = useUser();
   const [rows, setRows] = useState<Row[]>([]);
@@ -55,7 +70,7 @@ export default function Documents() {
                       : '—'}
                   </td>
                   <td>{r['Expiration Date'] ?? '—'}</td>
-                  <td><span className="chip gray">{r['Status (auto)'] ?? ''}</span></td>
+                  <td>{statusChip(r['Status (auto)'])}</td>
                 </tr>
               ))}
             </tbody>
