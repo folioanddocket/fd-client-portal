@@ -1,7 +1,7 @@
 'use client';
 
 import './globals.css';
-import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
+import { ClerkProvider, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,8 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <UserButton afterSignOutUrl="/sign-in" />
               </SignedIn>
               <SignedOut>
-                {/* Use supported props: signInUrl/afterSignInUrl */}
-                <SignInButton mode="redirect" signInUrl="/sign-in" afterSignInUrl="/dashboard" />
+                <a href="/sign-in" className="badge">Sign in</a>
               </SignedOut>
             </nav>
           </header>
@@ -31,4 +30,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </ClerkProvider>
   );
 }
-
