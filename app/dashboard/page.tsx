@@ -4,8 +4,6 @@ import { select } from "../../lib/airtable";
 import { getClientRecordId } from "../../lib/auth";
 
 export default async function Dashboard() {
-  console.log("DBG: rendering /dashboard with direct Airtable (no /api calls)");
-
   const clientId = await getClientRecordId();
 
   let vendors: any[] = [];
@@ -13,8 +11,9 @@ export default async function Dashboard() {
 
   if (clientId) {
     try {
+      // ✅ Use FIND over ARRAYJOIN of the Lookup field (array) to match the recID
       const v = await select("Vendors", {
-        filterByFormula: `{Client Record ID (lkp)} = '${clientId}'`,
+        filterByFormula: `FIND('${clientId}', ARRAYJOIN({Client Record ID (lkp)})) > 0`,
         maxRecords: 200,
         fields: [
           "Vendor Name",
@@ -45,6 +44,7 @@ export default async function Dashboard() {
         <h2 style={{margin:0}}>Top vendors to address</h2>
         {uploadLink ? <a href={uploadLink} className="badge">Add Vendor</a> : null}
       </div>
+
       <table>
         <thead>
           <tr>
