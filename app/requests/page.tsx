@@ -1,38 +1,36 @@
-'use client';
+export const dynamic = "force-dynamic";
 
-import { useUser } from '@clerk/nextjs';
-import { useEffect, useState } from 'react';
+import { select } from "../../lib/airtable";
+import { getClientRecordId } from "../../lib/auth";
 
-type ReqRow = Record<string, any>;
+export default async function Requests() {
+  const clientId = await getClientRecordId();
 
-export default function Requests() {
-  const { isSignedIn, user } = useUser();
-  const [rows, setRows] = useState<ReqRow[]>([]);
-  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '';
-
-  useEffect(() => {
-    if (!isSignedIn || !email) { setRows([]); return; }
-    const e = encodeURIComponent(email.toLowerCase().trim());
-    (async () => {
-      try {
-        const r = await fetch(`/api/requests?email=${e}`);
-        const json = await r.json();
-        setRows(Array.isArray(json) ? json : []);
-      } catch { setRows([]); }
-    })();
-  }, [isSignedIn, email]);
-
-  if (!isSignedIn) return <div><h2>Client Requests</h2><p>Please sign in to view your requests.</p></div>;
+  let rows: any[] = [];
+  if (clientId) {
+    try {
+      const r = await select("Requests", {
+        filterByFormula: `FIND('${clientId}', ARRAYJOIN({Client Record ID (lkp)})) > 0`,
+        maxRecords: 300,
+        cellFormat: "string",
+        fields: ["Sent At","Vendor","Template Used","Outcome","Resolved At"],
+        sort: [{ field: "Sent At", direction: "desc" }]
+      });
+      rows = r.records.map(x => ({ id: x.id, ...x.fields }));
+    } catch (e) {
+      console.error("requests data error", e);
+    }
+  }
 
   return (
     <div>
       <h2>Client Requests</h2>
       <table>
-        <thead><tr><th>Sent At</th><th>Vendor</th><th>Template</th><th>Outcome</th><th>Resolved</th></tr></thead>
+        <thead>
+          <tr><th>Sent At</th><th>Vendor</th><th>Template</th><th>Outcome</th><th>Resolved</th></tr>
+        </thead>
         <tbody>
-          {rows.length === 0 ? (
-            <tr><td colSpan={5}>No requests to display.</td></tr>
-          ) : rows.map((r:any)=>(
+          {rows.map((r:any)=>(
             <tr key={r.id}>
               <td>{r["Sent At"] ?? "—"}</td>
               <td>{Array.isArray(r["Vendor"]) ? r["Vendor"][0] : (r["Vendor"] ?? "—")}</td>
@@ -41,6 +39,9 @@ export default function Requests() {
               <td>{r["Resolved At"] ?? "—"}</td>
             </tr>
           ))}
+          {(!rows || rows.length === 0) && (
+            <tr><td colSpan={5}>No requests to display.</td></tr>
+          )}
         </tbody>
       </table>
     </div>
