@@ -9,8 +9,9 @@ export default async function Requests() {
   let rows: any[] = [];
   if (clientId) {
     try {
+      // ✅ FIND over ARRAYJOIN of the Lookup
       const r = await select("Requests", {
-        filterByFormula: `{Client Record ID (lkp)} = '${clientId}'`,
+        filterByFormula: `FIND('${clientId}', ARRAYJOIN({Client Record ID (lkp)})) > 0`,
         maxRecords: 300,
         cellFormat: "string",
         fields: ["Sent At","Vendor","Template Used","Outcome","Resolved At"],
