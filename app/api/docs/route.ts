@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { select } from "@/lib/airtable";
-import { getClientRecordId } from "@/lib/auth";
+import { select } from "../../../lib/airtable";
+import { getClientRecordId } from "../../../lib/auth";
 
 export async function GET() {
   const clientId = await getClientRecordId();
@@ -8,7 +8,6 @@ export async function GET() {
   const r = await select("Vendor Docs", {
     filterByFormula: filter,
     maxRecords: "500",
-    // 'cellFormat=string' makes linked fields (like Vendor) return the display name
     cellFormat: "string",
     fields: ["Vendor","Doc Type","File","Expiration Date","Status (auto)"].join(","),
     sort: "Expiration Date"
