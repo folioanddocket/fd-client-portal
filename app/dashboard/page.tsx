@@ -3,13 +3,16 @@
 import { useUser } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 
-type VendorRow = Record<string, any>;
+type Row = Record<string, any>;
 
 export default function Dashboard() {
   const { isSignedIn, user } = useUser();
-  const [vendors, setVendors] = useState<VendorRow[]>([]);
+  const [vendors, setVendors] = useState<Row[]>([]);
   const [uploadLink, setUploadLink] = useState<string | null>(null);
-  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '';
+  const email =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    '';
 
   useEffect(() => {
     if (!isSignedIn || !email) {
@@ -21,10 +24,10 @@ export default function Dashboard() {
     (async () => {
       try {
         const [vRes, cRes] = await Promise.all([
-          fetch(`/api/vendors?email=${e}`),
-          fetch(`/api/client?email=${e}`)
+          fetch(`/api/vendors?email=${e}`, { cache: 'no-store' }),
+          fetch(`/api/client?email=${e}`, { cache: 'no-store' }),
         ]);
-        const v = (await vRes.json()) as VendorRow[];
+        const v = (await vRes.json()) as Row[];
         const c = (await cRes.json()) as { uploadLink: string | null };
         setVendors(Array.isArray(v) ? v : []);
         setUploadLink(c?.uploadLink ?? null);
@@ -36,7 +39,12 @@ export default function Dashboard() {
   }, [isSignedIn, email]);
 
   if (!isSignedIn) {
-    return <div><h2>Top vendors to address</h2><p>Please sign in to view your vendors.</p></div>;
+    return (
+      <div>
+        <h2>Top vendors to address</h2>
+        <p>Please sign in to view your vendors.</p>
+      </div>
+    );
   }
 
   return (
