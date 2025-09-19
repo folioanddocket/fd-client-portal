@@ -1,50 +1,50 @@
-export const dynamic = "force-dynamic";
+'use client';
 
-import { select } from "../../lib/airtable";
-import { getClientRecordId } from "../../lib/auth";
+import { useUser } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
 
-export default async function Dashboard() {
-  const clientId = await getClientRecordId();
+type VendorRow = Record<string, any>;
 
-  let vendors: any[] = [];
-  let uploadLink: string | null = null;
+export default function Dashboard() {
+  const { isSignedIn, user } = useUser();
+  const [vendors, setVendors] = useState<VendorRow[]>([]);
+  const [uploadLink, setUploadLink] = useState<string | null>(null);
+  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '';
 
-  if (clientId) {
-    try {
-      // ✅ Use FIND over ARRAYJOIN of the Lookup field (array) to match the recID
-      const v = await select("Vendors", {
-        filterByFormula: `FIND('${clientId}', ARRAYJOIN({Client Record ID (lkp)})) > 0`,
-        maxRecords: 200,
-        fields: [
-          "Vendor Name",
-          "Status (auto)",
-          "Docs - Missing Count",
-          "Docs - Flagged Count",
-          "Docs - Expiring Count",
-          "Severity Score"
-        ],
-        sort: [{ field: "Severity Score", direction: "desc" }]
-      });
-      vendors = v.records.map(r => ({ id: r.id, ...r.fields }));
-
-      const c = await select("Clients", {
-        filterByFormula: `RECORD_ID() = '${clientId}'`,
-        maxRecords: 1,
-        fields: ["Upload Link (URL)"]
-      });
-      uploadLink = (c.records[0]?.fields["Upload Link (URL)"] as string) ?? null;
-    } catch (e) {
-      console.error("dashboard data error", e);
+  useEffect(() => {
+    if (!isSignedIn || !email) {
+      setVendors([]);
+      setUploadLink(null);
+      return;
     }
+    const e = encodeURIComponent(email.toLowerCase().trim());
+    (async () => {
+      try {
+        const [vRes, cRes] = await Promise.all([
+          fetch(`/api/vendors?email=${e}`),
+          fetch(`/api/client?email=${e}`)
+        ]);
+        const v = (await vRes.json()) as VendorRow[];
+        const c = (await cRes.json()) as { uploadLink: string | null };
+        setVendors(Array.isArray(v) ? v : []);
+        setUploadLink(c?.uploadLink ?? null);
+      } catch {
+        setVendors([]);
+        setUploadLink(null);
+      }
+    })();
+  }, [isSignedIn, email]);
+
+  if (!isSignedIn) {
+    return <div><h2>Top vendors to address</h2><p>Please sign in to view your vendors.</p></div>;
   }
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
         <h2 style={{margin:0}}>Top vendors to address</h2>
         {uploadLink ? <a href={uploadLink} className="badge">Add Vendor</a> : null}
       </div>
-
       <table>
         <thead>
           <tr>
@@ -52,7 +52,9 @@ export default async function Dashboard() {
           </tr>
         </thead>
         <tbody>
-          {vendors.map((v:any)=>(
+          {vendors.length === 0 ? (
+            <tr><td colSpan={5}>No vendors to display.</td></tr>
+          ) : vendors.map((v:any)=>(
             <tr key={v.id}>
               <td>{v["Vendor Name"]}</td>
               <td><span className="badge">{v["Status (auto)"]}</span></td>
@@ -61,9 +63,6 @@ export default async function Dashboard() {
               <td>{v["Docs - Expiring Count"] ?? 0}</td>
             </tr>
           ))}
-          {(!vendors || vendors.length === 0) && (
-            <tr><td colSpan={5}>No vendors to display.</td></tr>
-          )}
         </tbody>
       </table>
     </div>
