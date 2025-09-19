@@ -2,16 +2,12 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
-
 type Row = Record<string, any>;
 
 export default function Documents() {
   const { isSignedIn, user } = useUser();
   const [rows, setRows] = useState<Row[]>([]);
-  const email =
-    user?.primaryEmailAddress?.emailAddress ||
-    user?.emailAddresses?.[0]?.emailAddress ||
-    '';
+  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '';
 
   useEffect(() => {
     if (!isSignedIn || !email) { setRows([]); return; }
@@ -37,15 +33,11 @@ export default function Documents() {
             <tr><td colSpan={5}>No documents to display.</td></tr>
           ) : rows.map((r:any)=>(
             <tr key={r.id}>
-              <td>{Array.isArray(r["Vendor"]) ? r["Vendor"][0] : (r["Vendor"] ?? "—")}</td>
-              <td>{r["Doc Type"] ?? "—"}</td>
-              <td>
-                {Array.isArray(r["File"]) && r["File"].length
-                  ? <a className="badge" href={r["File"][0].url} target="_blank">Download</a>
-                  : "—"}
-              </td>
-              <td>{r["Expiration Date"] ?? "—"}</td>
-              <td><span className="badge">{r["Status (auto)"] ?? ""}</span></td>
+              <td>{Array.isArray(r['Vendor']) ? r['Vendor'][0] : (r['Vendor'] ?? '—')}</td>
+              <td>{r['Doc Type'] ?? '—'}</td>
+              <td>{Array.isArray(r['File']) && r['File'].length ? <a className="badge" href={r['File'][0].url} target="_blank">Download</a> : '—'}</td>
+              <td>{r['Expiration Date'] ?? '—'}</td>
+              <td><span className="badge">{r['Status (auto)'] ?? ''}</span></td>
             </tr>
           ))}
         </tbody>
