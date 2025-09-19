@@ -4,6 +4,7 @@ import { getClientRecordId } from "../../../lib/auth";
 
 export async function GET() {
   const clientId = await getClientRecordId();
+  if (!clientId) return NextResponse.json([]); // no crash: empty list until mapped
   const filter = `{Client Record ID (lkp)} = '${clientId}'`;
   const r = await select("Vendors", {
     filterByFormula: filter,
