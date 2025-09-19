@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { select } from "@/lib/airtable";
-import { getClientRecordId } from "@/lib/auth";
+import { select } from "../../../lib/airtable";
+import { getClientRecordId } from "../../../lib/auth";
 
 export async function GET() {
   const clientId = await getClientRecordId();
