@@ -1,21 +1,41 @@
-import { headers } from "next/headers";
+export const dynamic = "force-dynamic";
 
-function getOrigin() {
-  const h = headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
-
-async function fetchJSON(path: string) {
-  const r = await fetch(`${getOrigin()}${path}`, { cache: "no-store" });
-  if (!r.ok) return path === "/api/client" ? { uploadLink: null } : [];
-  return r.json();
-}
+import { select } from "../../lib/airtable";
+import { getClientRecordId } from "../../lib/auth";
 
 export default async function Dashboard() {
-  const vendors = await fetchJSON("/api/vendors");
-  const { uploadLink } = await fetchJSON("/api/client");
+  const clientId = await getClientRecordId();
+
+  let vendors: any[] = [];
+  let uploadLink: string | null = null;
+
+  if (clientId) {
+    try {
+      const v = await select("Vendors", {
+        filterByFormula: `{Client Record ID (lkp)} = '${clientId}'`,
+        maxRecords: 200,
+        fields: [
+          "Vendor Name",
+          "Status (auto)",
+          "Docs - Missing Count",
+          "Docs - Flagged Count",
+          "Docs - Expiring Count",
+          "Severity Score"
+        ],
+        sort: [{ field: "Severity Score", direction: "desc" }]
+      });
+      vendors = v.records.map(r => ({ id: r.id, ...r.fields }));
+
+      const c = await select("Clients", {
+        filterByFormula: `RECORD_ID() = '${clientId}'`,
+        maxRecords: 1,
+        fields: ["Upload Link (URL)"]
+      });
+      uploadLink = (c.records[0]?.fields["Upload Link (URL)"] as string) ?? null;
+    } catch (e) {
+      console.error("dashboard data error", e);
+    }
+  }
 
   return (
     <div>
@@ -23,6 +43,7 @@ export default async function Dashboard() {
         <h2 style={{margin:0}}>Top vendors to address</h2>
         {uploadLink ? <a href={uploadLink} className="badge">Add Vendor</a> : null}
       </div>
+
       <table>
         <thead>
           <tr>
