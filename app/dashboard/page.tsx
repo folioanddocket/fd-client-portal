@@ -45,7 +45,6 @@ export default async function Dashboard() {
         <h2 style={{margin:0}}>Top vendors to address</h2>
         {uploadLink ? <a href={uploadLink} className="badge">Add Vendor</a> : null}
       </div>
-
       <table>
         <thead>
           <tr>
