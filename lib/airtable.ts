@@ -5,14 +5,19 @@ const API     = `https://api.airtable.com/v0/${BASE_ID}`;
 
 type SortSpec = { field: string; direction?: "asc" | "desc" };
 
-export async function select(table: string, opts: {
-  filterByFormula?: string;
-  maxRecords?: number | string;
-  pageSize?: number | string;
-  cellFormat?: "json" | "string";
-  fields?: string[];
-  sort?: SortSpec[];
-}) {
+export async function select(
+  table: string,
+  opts: {
+    filterByFormula?: string;
+    maxRecords?: number | string;
+    pageSize?: number | string;
+    cellFormat?: "json" | "string";
+    fields?: string[];
+    sort?: SortSpec[];
+    timeZone?: string;
+    userLocale?: string;
+  }
+) {
   const qs = new URLSearchParams();
 
   if (opts.filterByFormula) qs.set("filterByFormula", opts.filterByFormula);
@@ -23,6 +28,7 @@ export async function select(table: string, opts: {
   if (opts.fields && opts.fields.length) {
     for (const f of opts.fields) qs.append("fields[]", f);
   }
+
   if (opts.sort && opts.sort.length) {
     opts.sort.forEach((s, i) => {
       qs.append(`sort[${i}][field]`, s.field);
@@ -30,15 +36,22 @@ export async function select(table: string, opts: {
     });
   }
 
+  // Airtable requires timeZone and userLocale when cellFormat=string
+  if (opts.cellFormat === "string") {
+    qs.set("timeZone",  opts.timeZone   || "America/Los_Angeles");
+    qs.set("userLocale", opts.userLocale || "en-US");
+  } else {
+    if (opts.timeZone)   qs.set("timeZone", opts.timeZone);
+    if (opts.userLocale) qs.set("userLocale", opts.userLocale);
+  }
+
   const res = await fetch(`${API}/${encodeURIComponent(table)}?${qs.toString()}`, {
     headers: { Authorization: `Bearer ${AT_KEY}` },
-    // No cache so client sees latest
     cache: "no-store"
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    // Log details to Vercel function logs for debugging but don't expose publicly
     console.error("Airtable error", res.status, text);
     throw new Error(`Airtable ${table} ${res.status}`);
   }
