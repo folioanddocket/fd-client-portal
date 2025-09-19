@@ -4,6 +4,8 @@ import { select } from "../../lib/airtable";
 import { getClientRecordId } from "../../lib/auth";
 
 export default async function Dashboard() {
+  console.log("DBG: rendering /dashboard with direct Airtable (no /api calls)");
+
   const clientId = await getClientRecordId();
 
   let vendors: any[] = [];
