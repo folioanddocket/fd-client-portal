@@ -3,44 +3,33 @@ import { select } from "../lib/airtable";
 
 /**
  * Returns the Airtable Clients record ID for the logged-in user.
- * Priority:
- *   1) (optional) Clerk public metadata clientRecordId, if present
- *   2) Match by email: Clients → Primary Contact Email (case-insensitive)
- * If nothing matches, returns null (APIs will respond with empty data).
+ * Strategy:
+ *   - Read the signed-in user via Clerk server SDK (no middleware required)
+ *   - Use their primary email to look up Clients by Primary Contact Email (case-insensitive)
+ * If no user / no match, return null (pages will render with empty tables, not crash).
  */
 export async function getClientRecordId(): Promise<string | null> {
-  const user = await currentUser();
-  if (!user) return null;
-
-  // 1) If you ever set metadata later, we still respect it.
-  const metaId =
-    (user.publicMetadata as any)?.clientRecordId as string | undefined;
-  if (metaId && metaId.startsWith("rec")) return metaId;
-
-  // 2) Fallback: match by email against Clients.Primary Contact Email
-  // Clerk can store multiple emails; use the primary, fallback to first.
-  const primary =
-    (user as any)?.primaryEmailAddress?.emailAddress as string | undefined;
-  const fallback = user.emailAddresses?.[0]?.emailAddress as
-    | string
-    | undefined;
-  const email = (primary || fallback || "").trim().toLowerCase();
-  if (!email) return null;
-
-  // Case-insensitive match in Airtable
-  const filter = `LOWER({Primary Contact Email}) = '${email}'`;
-
   try {
+    const user = await currentUser();         // <-- no middleware required
+    if (!user) return null;
+
+    const primary =
+      (user as any)?.primaryEmailAddress?.emailAddress ||
+      user.emailAddresses?.[0]?.emailAddress ||
+      "";
+    const email = primary.trim().toLowerCase();
+    if (!email) return null;
+
     const r = await select("Clients", {
-      filterByFormula: filter,
+      filterByFormula: `LOWER({Primary Contact Email}) = '${email}'`,
       maxRecords: 1,
-      fields: ["Client Record ID"],
+      fields: ["Client Record ID"]
     });
-    const rec = r.records[0];
-    const id = rec?.fields?.["Client Record ID"] as string | undefined;
+
+    const id = r.records[0]?.fields?.["Client Record ID"] as string | undefined;
     return id?.startsWith("rec") ? id : null;
-  } catch (e) {
-    console.error("client email lookup failed", e);
+  } catch (err) {
+    console.error("getClientRecordId error", err);
     return null;
   }
 }
