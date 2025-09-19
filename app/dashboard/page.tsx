@@ -1,24 +1,27 @@
-async function fetchJSON(path: string) {
-  const r = await fetch(path, { cache: "no-store" });
-  if (!r.ok) throw new Error(await r.text());
-  return r.json();
+import { headers } from "next/headers";
+
+function getOrigin() {
+  const h = headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
 }
 
-async function AddVendorButton() {
-  const r = await fetch("/api/client", { cache: "no-store" });
-  if (!r.ok) return null;
-  const { uploadLink } = await r.json();
-  if (!uploadLink) return null;
-  return <a href={uploadLink} className="badge">Add Vendor</a>;
+async function fetchJSON(path: string) {
+  const r = await fetch(`${getOrigin()}${path}`, { cache: "no-store" });
+  if (!r.ok) return path === "/api/client" ? { uploadLink: null } : [];
+  return r.json();
 }
 
 export default async function Dashboard() {
   const vendors = await fetchJSON("/api/vendors");
+  const { uploadLink } = await fetchJSON("/api/client");
+
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <h2 style={{margin:0}}>Top vendors to address</h2>
-        {await AddVendorButton()}
+        {uploadLink ? <a href={uploadLink} className="badge">Add Vendor</a> : null}
       </div>
       <table>
         <thead>
@@ -36,6 +39,9 @@ export default async function Dashboard() {
               <td>{v["Docs - Expiring Count"] ?? 0}</td>
             </tr>
           ))}
+          {(!vendors || vendors.length === 0) && (
+            <tr><td colSpan={5}>No vendors to display.</td></tr>
+          )}
         </tbody>
       </table>
     </div>
