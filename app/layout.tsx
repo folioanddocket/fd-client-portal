@@ -20,7 +20,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <UserButton afterSignOutUrl="/sign-in" />
               </SignedIn>
               <SignedOut>
-                <SignInButton mode="redirect" redirectUrl="/dashboard" />
+                {/* Use supported props: signInUrl/afterSignInUrl */}
+                <SignInButton mode="redirect" signInUrl="/sign-in" afterSignInUrl="/dashboard" />
               </SignedOut>
             </nav>
           </header>
@@ -30,3 +31,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </ClerkProvider>
   );
 }
+
