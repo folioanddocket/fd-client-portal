@@ -1,6 +1,15 @@
+import { headers } from "next/headers";
+
+function getOrigin() {
+  const h = headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
 async function fetchJSON(path: string) {
-  const r = await fetch(path, { cache: "no-store" });
-  if (!r.ok) throw new Error(await r.text());
+  const r = await fetch(`${getOrigin()}${path}`, { cache: "no-store" });
+  if (!r.ok) return [];
   return r.json();
 }
 
@@ -23,6 +32,9 @@ export default async function Requests() {
               <td>{r["Resolved At"] ?? "—"}</td>
             </tr>
           ))}
+          {(!rows || rows.length === 0) && (
+            <tr><td colSpan={5}>No requests to display.</td></tr>
+          )}
         </tbody>
       </table>
     </div>
