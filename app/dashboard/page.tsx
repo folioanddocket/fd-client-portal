@@ -2,24 +2,16 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
-
 type Row = Record<string, any>;
 
 export default function Dashboard() {
   const { isSignedIn, user } = useUser();
   const [vendors, setVendors] = useState<Row[]>([]);
   const [uploadLink, setUploadLink] = useState<string | null>(null);
-  const email =
-    user?.primaryEmailAddress?.emailAddress ||
-    user?.emailAddresses?.[0]?.emailAddress ||
-    '';
+  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '';
 
   useEffect(() => {
-    if (!isSignedIn || !email) {
-      setVendors([]);
-      setUploadLink(null);
-      return;
-    }
+    if (!isSignedIn || !email) { setVendors([]); setUploadLink(null); return; }
     const e = encodeURIComponent(email.toLowerCase().trim());
     (async () => {
       try {
@@ -31,21 +23,11 @@ export default function Dashboard() {
         const c = (await cRes.json()) as { uploadLink: string | null };
         setVendors(Array.isArray(v) ? v : []);
         setUploadLink(c?.uploadLink ?? null);
-      } catch {
-        setVendors([]);
-        setUploadLink(null);
-      }
+      } catch { setVendors([]); setUploadLink(null); }
     })();
   }, [isSignedIn, email]);
 
-  if (!isSignedIn) {
-    return (
-      <div>
-        <h2>Top vendors to address</h2>
-        <p>Please sign in to view your vendors.</p>
-      </div>
-    );
-  }
+  if (!isSignedIn) return <div><h2>Top vendors to address</h2><p>Please sign in to view your vendors.</p></div>;
 
   return (
     <div>
@@ -55,20 +37,18 @@ export default function Dashboard() {
       </div>
       <table>
         <thead>
-          <tr>
-            <th>Vendor</th><th>Status</th><th>Missing</th><th>Flagged</th><th>Expiring</th>
-          </tr>
+          <tr><th>Vendor</th><th>Status</th><th>Missing</th><th>Flagged</th><th>Expiring</th></tr>
         </thead>
         <tbody>
           {vendors.length === 0 ? (
             <tr><td colSpan={5}>No vendors to display.</td></tr>
           ) : vendors.map((v:any)=>(
             <tr key={v.id}>
-              <td>{v["Vendor Name"]}</td>
-              <td><span className="badge">{v["Status (auto)"]}</span></td>
-              <td>{v["Docs - Missing Count"] ?? 0}</td>
-              <td>{v["Docs - Flagged Count"] ?? 0}</td>
-              <td>{v["Docs - Expiring Count"] ?? 0}</td>
+              <td>{v['Vendor Name']}</td>
+              <td><span className="badge">{v['Status (auto)']}</span></td>
+              <td>{v['Docs - Missing Count'] ?? 0}</td>
+              <td>{v['Docs - Flagged Count'] ?? 0}</td>
+              <td>{v['Docs - Expiring Count'] ?? 0}</td>
             </tr>
           ))}
         </tbody>
