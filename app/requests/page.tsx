@@ -2,16 +2,12 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
-
 type Row = Record<string, any>;
 
 export default function Requests() {
   const { isSignedIn, user } = useUser();
   const [rows, setRows] = useState<Row[]>([]);
-  const email =
-    user?.primaryEmailAddress?.emailAddress ||
-    user?.emailAddresses?.[0]?.emailAddress ||
-    '';
+  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '';
 
   useEffect(() => {
     if (!isSignedIn || !email) { setRows([]); return; }
@@ -37,11 +33,11 @@ export default function Requests() {
             <tr><td colSpan={5}>No requests to display.</td></tr>
           ) : rows.map((r:any)=>(
             <tr key={r.id}>
-              <td>{r["Sent At"] ?? "—"}</td>
-              <td>{Array.isArray(r["Vendor"]) ? r["Vendor"][0] : (r["Vendor"] ?? "—")}</td>
-              <td>{r["Template Used"] ?? "—"}</td>
-              <td>{r["Outcome"] ?? "—"}</td>
-              <td>{r["Resolved At"] ?? "—"}</td>
+              <td>{r['Sent At'] ?? '—'}</td>
+              <td>{Array.isArray(r['Vendor']) ? r['Vendor'][0] : (r['Vendor'] ?? '—')}</td>
+              <td>{r['Template Used'] ?? '—'}</td>
+              <td>{r['Outcome'] ?? '—'}</td>
+              <td>{r['Resolved At'] ?? '—'}</td>
             </tr>
           ))}
         </tbody>
