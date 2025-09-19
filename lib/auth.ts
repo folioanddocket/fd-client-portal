@@ -3,6 +3,6 @@ import { currentUser } from "@clerk/nextjs/server";
 export async function getClientRecordId() {
   const user = await currentUser();
   const id = (user?.publicMetadata as any)?.clientRecordId as string | undefined;
-  if (!id) throw new Error("clientRecordId missing in user publicMetadata");
-  return id;
+  // Return null instead of throwing; APIs will handle this gracefully.
+  return id ?? null;
 }
