@@ -2,15 +2,13 @@ import { currentUser } from "@clerk/nextjs/server";
 import { select } from "../lib/airtable";
 
 /**
- * Returns the Airtable Clients record ID for the logged-in user.
- * Strategy:
- *   - Read the signed-in user via Clerk server SDK (no middleware required)
- *   - Use their primary email to look up Clients by Primary Contact Email (case-insensitive)
- * If no user / no match, return null (pages will render with empty tables, not crash).
+ * Return the Airtable Clients record ID for the logged-in user (or null).
+ * Uses Clerk.currentUser() (no middleware required) and matches by email:
+ * Clients → Primary Contact Email (case-insensitive).
  */
 export async function getClientRecordId(): Promise<string | null> {
   try {
-    const user = await currentUser();         // <-- no middleware required
+    const user = await currentUser();
     if (!user) return null;
 
     const primary =
