@@ -9,8 +9,9 @@ export default async function Documents() {
   let rows: any[] = [];
   if (clientId) {
     try {
+      // ✅ FIND over ARRAYJOIN of the Lookup
       const r = await select("Vendor Docs", {
-        filterByFormula: `{Client Record ID (lkp)} = '${clientId}'`,
+        filterByFormula: `FIND('${clientId}', ARRAYJOIN({Client Record ID (lkp)})) > 0`,
         maxRecords: 500,
         cellFormat: "string",
         fields: ["Vendor","Doc Type","File","Expiration Date","Status (auto)"],
