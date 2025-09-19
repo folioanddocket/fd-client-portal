@@ -8,7 +8,6 @@ export async function GET(req: NextRequest) {
   try {
     const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase();
     if (!email) return NextResponse.json([]);
-
     const c = await select("Clients", {
       filterByFormula: `LOWER({Primary Contact Email}) = '${email}'`,
       maxRecords: 1,
@@ -27,7 +26,6 @@ export async function GET(req: NextRequest) {
       ],
       sort: [{ field: "Severity Score", direction: "desc" }]
     });
-
     return NextResponse.json(v.records.map(r => ({ id: r.id, ...r.fields })));
   } catch (e) {
     console.error("vendors api error", e);
