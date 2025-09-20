@@ -6,22 +6,17 @@ import { useEffect, useMemo, useState } from 'react';
 type Row = Record<string, any>;
 
 export default function Dashboard() {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const [vendors, setVendors] = useState<Row[]>([]);
   const [uploadLink, setUploadLink] = useState<string | null>(null);
-  const email =
-    user?.primaryEmailAddress?.emailAddress ||
-    user?.emailAddresses?.[0]?.emailAddress ||
-    '';
 
   useEffect(() => {
-    if (!isSignedIn || !email) { setVendors([]); setUploadLink(null); return; }
-    const e = encodeURIComponent(email.toLowerCase().trim());
+    if (!isSignedIn) { setVendors([]); setUploadLink(null); return; }
     (async () => {
       try {
         const [vRes, cRes] = await Promise.all([
-          fetch(`/api/vendors?email=${e}`, { cache:'no-store' }),
-          fetch(`/api/client?email=${e}`, { cache:'no-store' })
+          fetch('/api/vendors', { cache: 'no-store' }),
+          fetch('/api/client',  { cache: 'no-store' }),
         ]);
         const v = await vRes.json();
         const c = await cRes.json();
@@ -29,7 +24,7 @@ export default function Dashboard() {
         setUploadLink(c?.uploadLink ?? null);
       } catch { setVendors([]); setUploadLink(null); }
     })();
-  }, [isSignedIn, email]);
+  }, [isSignedIn]);
 
   const stats = useMemo(() => {
     const red = vendors.filter(v => v['Status (auto)'] === 'Red - Missing').length;
@@ -48,12 +43,12 @@ export default function Dashboard() {
     );
   }
 
-  const statusChip = (s:string) => {
+  const statusChip = (s: string) => {
     if (s === 'Red - Missing') return <span className="chip red">{s}</span>;
     if (s === 'Yellow - Expiring') return <span className="chip amber">{s}</span>;
     if (s === 'Green') return <span className="chip green">{s}</span>;
     return <span className="chip gray">{s || '—'}</span>;
-  };
+    };
 
   return (
     <>
@@ -62,27 +57,13 @@ export default function Dashboard() {
         {uploadLink ? <a className="btn btn-primary" href={uploadLink}>Add Vendor</a> : null}
       </div>
 
-      {/* Stats */}
       <div className="stats">
-        <div className="stat">
-          <div className="stat-label">Red - Missing</div>
-          <div className="stat-value">{stats.red}</div>
-        </div>
-        <div className="stat">
-          <div className="stat-label">Flagged</div>
-          <div className="stat-value">{stats.flagged}</div>
-        </div>
-        <div className="stat">
-          <div className="stat-label">Yellow - Expiring</div>
-          <div className="stat-value">{stats.exp}</div>
-        </div>
-        <div className="stat">
-          <div className="stat-label">Green</div>
-          <div className="stat-value">{stats.green}</div>
-        </div>
+        <div className="stat"><div className="stat-label">Red - Missing</div><div className="stat-value">{stats.red}</div></div>
+        <div className="stat"><div className="stat-label">Flagged</div><div className="stat-value">{stats.flagged}</div></div>
+        <div className="stat"><div className="stat-label">Yellow - Expiring</div><div className="stat-value">{stats.exp}</div></div>
+        <div className="stat"><div className="stat-label">Green</div><div className="stat-value">{stats.green}</div></div>
       </div>
 
-      {/* Vendors table */}
       <div className="card table-card">
         <div className="table-head">Top vendors to address</div>
         {vendors.length === 0 ? (
@@ -91,11 +72,7 @@ export default function Dashboard() {
           <table className="table">
             <thead>
               <tr>
-                <th>Vendor</th>
-                <th>Status</th>
-                <th>Missing</th>
-                <th>Flagged</th>
-                <th>Expiring</th>
+                <th>Vendor</th><th>Status</th><th>Missing</th><th>Flagged</th><th>Expiring</th>
               </tr>
             </thead>
             <tbody>
