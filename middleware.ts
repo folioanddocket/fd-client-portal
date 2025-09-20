@@ -1,10 +1,8 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-export default clerkMiddleware({
-  publicRoutes: ["/sign-in(.*)", "/sign-up(.*)", "/favicon.ico"]
-});
+export default clerkMiddleware();
 
-// Run on everything except Next assets/files
+// Run on everything except Next assets/static files
 export const config = {
   matcher: ["/((?!_next|.*\\..*).*)"]
 };
