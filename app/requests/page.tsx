@@ -6,24 +6,19 @@ import { useEffect, useState } from 'react';
 type Row = Record<string, any>;
 
 export default function Requests() {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const [rows, setRows] = useState<Row[]>([]);
-  const email =
-    user?.primaryEmailAddress?.emailAddress ||
-    user?.emailAddresses?.[0]?.emailAddress ||
-    '';
 
   useEffect(() => {
-    if (!isSignedIn || !email) { setRows([]); return; }
-    const e = encodeURIComponent(email.toLowerCase().trim());
+    if (!isSignedIn) { setRows([]); return; }
     (async () => {
       try {
-        const r = await fetch(`/api/requests?email=${e}`, { cache:'no-store' });
+        const r = await fetch('/api/requests', { cache:'no-store' });
         const json = await r.json();
         setRows(Array.isArray(json) ? json : []);
       } catch { setRows([]); }
     })();
-  }, [isSignedIn, email]);
+  }, [isSignedIn]);
 
   if (!isSignedIn) {
     return <>
