@@ -7,38 +7,26 @@ type Row = Record<string, any>;
 
 function statusChip(value: string | undefined) {
   const s = (value || '').trim();
-  // Map common variants
-  if (s === 'Red - Missing' || s === 'Missing' || s === 'Flagged') {
-    return <span className="chip red">{s || '—'}</span>;
-  }
-  if (s === 'Yellow - Expiring' || s === 'Expiring') {
-    return <span className="chip amber">{s}</span>;
-  }
-  if (s === 'Green' || s === 'OK') {
-    return <span className="chip green">{s}</span>;
-  }
+  if (s === 'Red - Missing' || s === 'Missing' || s === 'Flagged') return <span className="chip red">{s || '—'}</span>;
+  if (s === 'Yellow - Expiring' || s === 'Expiring') return <span className="chip amber">{s}</span>;
+  if (s === 'Green' || s === 'OK') return <span className="chip green">{s}</span>;
   return <span className="chip gray">{s || '—'}</span>;
 }
 
 export default function Documents() {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const [rows, setRows] = useState<Row[]>([]);
-  const email =
-    user?.primaryEmailAddress?.emailAddress ||
-    user?.emailAddresses?.[0]?.emailAddress ||
-    '';
 
   useEffect(() => {
-    if (!isSignedIn || !email) { setRows([]); return; }
-    const e = encodeURIComponent(email.toLowerCase().trim());
+    if (!isSignedIn) { setRows([]); return; }
     (async () => {
       try {
-        const r = await fetch(`/api/docs?email=${e}`, { cache:'no-store' });
+        const r = await fetch('/api/docs', { cache:'no-store' });
         const json = await r.json();
         setRows(Array.isArray(json) ? json : []);
       } catch { setRows([]); }
     })();
-  }, [isSignedIn, email]);
+  }, [isSignedIn]);
 
   if (!isSignedIn) {
     return <>
@@ -62,11 +50,11 @@ export default function Documents() {
             <tbody>
               {rows.map((r:any)=>(
                 <tr key={r.id}>
-                  <td>{Array.isArray(r['Vendor']) ? r['Vendor'][0] : (r['Vendor'] ?? '—')}</td>
+                  <td>{r['Vendor'] ?? '—'}</td>
                   <td>{r['Doc Type'] ?? '—'}</td>
                   <td>
                     {Array.isArray(r['File']) && r['File'].length
-                      ? <a className="btn" href={r['File'][0].url} target="_blank">Download</a>
+                      ? <a className="btn" href={r['File'][0].url} target="_blank" rel="noreferrer">Download</a>
                       : '—'}
                   </td>
                   <td>{r['Expiration Date'] ?? '—'}</td>
