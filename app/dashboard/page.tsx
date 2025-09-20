@@ -6,17 +6,19 @@ import { useEffect, useMemo, useState } from 'react';
 type Row = Record<string, any>;
 
 export default function Dashboard() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const [vendors, setVendors] = useState<Row[]>([]);
   const [uploadLink, setUploadLink] = useState<string | null>(null);
+  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '';
 
   useEffect(() => {
-    if (!isSignedIn) { setVendors([]); setUploadLink(null); return; }
+    if (!isSignedIn || !email) { setVendors([]); setUploadLink(null); return; }
+    const hdr = { 'x-client-email': email.toLowerCase().trim() };
     (async () => {
       try {
         const [vRes, cRes] = await Promise.all([
-          fetch('/api/vendors', { cache: 'no-store' }),
-          fetch('/api/client',  { cache: 'no-store' }),
+          fetch('/api/vendors', { cache: 'no-store', headers: hdr }),
+          fetch('/api/client',  { cache: 'no-store', headers: hdr }),
         ]);
         const v = await vRes.json();
         const c = await cRes.json();
@@ -24,7 +26,7 @@ export default function Dashboard() {
         setUploadLink(c?.uploadLink ?? null);
       } catch { setVendors([]); setUploadLink(null); }
     })();
-  }, [isSignedIn]);
+  }, [isSignedIn, email]);
 
   const stats = useMemo(() => {
     const red = vendors.filter(v => v['Status (auto)'] === 'Red - Missing').length;
@@ -48,7 +50,7 @@ export default function Dashboard() {
     if (s === 'Yellow - Expiring') return <span className="chip amber">{s}</span>;
     if (s === 'Green') return <span className="chip green">{s}</span>;
     return <span className="chip gray">{s || '—'}</span>;
-    };
+  };
 
   return (
     <>
