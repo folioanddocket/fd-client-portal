@@ -14,19 +14,21 @@ function statusChip(value: string | undefined) {
 }
 
 export default function Documents() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const [rows, setRows] = useState<Row[]>([]);
+  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '';
 
   useEffect(() => {
-    if (!isSignedIn) { setRows([]); return; }
+    if (!isSignedIn || !email) { setRows([]); return; }
+    const hdr = { 'x-client-email': email.toLowerCase().trim() };
     (async () => {
       try {
-        const r = await fetch('/api/docs', { cache:'no-store' });
+        const r = await fetch('/api/docs', { cache:'no-store', headers: hdr });
         const json = await r.json();
         setRows(Array.isArray(json) ? json : []);
       } catch { setRows([]); }
     })();
-  }, [isSignedIn]);
+  }, [isSignedIn, email]);
 
   if (!isSignedIn) {
     return <>
