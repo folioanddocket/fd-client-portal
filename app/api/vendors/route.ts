@@ -2,28 +2,41 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse, NextRequest } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
 import { select } from "../../../lib/airtable";
 
-export async function GET(_req: NextRequest) {
-  try {
-    const user = await currentUser();
-    const email =
-      user?.primaryEmailAddress?.emailAddress?.toLowerCase().trim() ||
-      user?.emailAddresses?.[0]?.emailAddress?.toLowerCase().trim() ||
-      "";
-    if (!email) return NextResponse.json([], { status: 401 });
+function esc(s: string) { return String(s ?? "").replace(/'/g, "''"); }
 
-    // 1) Find client by email
+async function getClientIdByEmail(email: string): Promise<string | null> {
+  try {
     const c = await select("Clients", {
-      filterByFormula: `LOWER({Primary Contact Email}) = '${email}'`,
+      filterByFormula: `LOWER({Primary Contact Email}) = '${esc(email)}'`,
       maxRecords: 1,
       fields: ["Client Record ID"],
     });
-    const clientId = c.records[0]?.fields?.["Client Record ID"] as string | undefined;
+    const id = c.records[0]?.fields?.["Client Record ID"] as string | undefined;
+    if (id) return id;
+  } catch {}
+  try {
+    const c2 = await select("Clients", {
+      filterByFormula: `FIND('${esc(email)}', LOWER(SUBSTITUTE({Portal Login Emails}," ",""))) > 0`,
+      maxRecords: 1,
+      fields: ["Client Record ID"],
+    });
+    const id2 = c2.records[0]?.fields?.["Client Record ID"] as string | undefined;
+    if (id2) return id2;
+  } catch {}
+  return null;
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const email =
+      req.headers.get("x-client-email")?.toLowerCase().trim() ?? "";
+    if (!email) return NextResponse.json([], { status: 401 });
+
+    const clientId = await getClientIdByEmail(email);
     if (!clientId) return NextResponse.json([]);
 
-    // 2) Vendors for this client
     const v = await select("Vendors", {
       filterByFormula: `FIND('${clientId}', ARRAYJOIN({Client Record ID (lkp)})) > 0`,
       maxRecords: 200,
