@@ -52,7 +52,7 @@ export default function PrivacyPage() {
       <p>We may update this Policy; we will post the new effective date. Continued use means acceptance.</p>
 
       <h2>12) Contact</h2>
-      <p>Questions or requests: <a href="mailto:privacy@yourdomain.com">privacy@yourdomain.com</a>.</p>
+      <p>Questions or requests: <a href="mailto:privacy@folioanddocket.com">privacy@yourdomain.com</a>.</p>
     </article>
   );
 }
