@@ -14,12 +14,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="header-inner">
               <h1 className="brand">Folio &amp; Docket — Client Portal</h1>
               <nav className="nav">
+                {/* Always-visible legal links */}
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+
                 <SignedIn>
                   <a href="/dashboard">Summary</a>
                   <a href="/documents">Documents</a>
                   <a href="/requests">Requests</a>
                   <UserButton afterSignOutUrl="/sign-in" />
                 </SignedIn>
+
                 <SignedOut>
                   <a href="/sign-in" className="btn btn-primary">Sign in</a>
                 </SignedOut>
