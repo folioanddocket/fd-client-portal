@@ -65,7 +65,7 @@ export default function TermsPage() {
       <p>California law governs. Venue: Orange County, California.</p>
 
       <h2>16) Contact</h2>
-      <p>Questions? Email <a href="mailto:support@yourdomain.com">support@yourdomain.com</a>.</p>
+      <p>Questions? Email <a href="mailto:support@yourdomain.com">support@folioanddocket.com</a>.</p>
     </article>
   );
 }
